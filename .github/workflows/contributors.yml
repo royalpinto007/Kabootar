@@ -1,0 +1,337 @@
+name: Contributors
+
+on:
+  pull_request_target:
+    types: [opened, closed]
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contributors-${{ github.event_name }}-${{ github.event.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  # Security note: pull_request_target runs with write permissions.
+  # These jobs never check out or execute any code from the pull request.
+  thank-merged-pr:
+    name: Thank merged PR author
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.login != 'royalpinto007' &&
+      github.event.pull_request.user.type != 'Bot' &&
+      !endsWith(github.event.pull_request.user.login, '[bot]')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const author = context.payload.pull_request.user.login;
+            const repo = context.repo.repo;
+            const openings = [
+              `Merged. Thanks a lot, @${author}.`,
+              `This is in, @${author}. Really appreciate it.`,
+              `Nice work @${author}, this is merged.`,
+              `Merged, @${author}. Thank you for taking the time.`,
+              `And it's in. Thanks @${author}.`,
+            ];
+            const middles = [
+              `${repo} gets better every time someone outside the repo digs in like this.`,
+              `Contributions like this are what keep ${repo} moving.`,
+              `Genuinely helpful change for ${repo}.`,
+              `Good, focused change. Exactly the kind of thing ${repo} needs.`,
+            ];
+            const closers = [
+              `If ${repo} is useful to you, a star goes a long way.`,
+              `If you find ${repo} useful, consider dropping a star. It helps more people find it.`,
+              `A star on the repo would mean a lot if this project is useful to you.`,
+              `If this project helps you out, a star helps others find it too.`,
+            ];
+            const pick = (arr, salt) =>
+              arr[(context.payload.pull_request.number + salt) % arr.length];
+            const body = [
+              pick(openings, 0),
+              pick(middles, 1),
+              pick(closers, 2),
+              "",
+              "Happy to see more from you whenever you have the time.",
+            ].join("\n\n");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
+
+  welcome-first-time:
+    name: Welcome first-time contributor
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'opened' &&
+      github.event.pull_request.user.login != 'royalpinto007' &&
+      github.event.pull_request.user.type != 'Bot' &&
+      !endsWith(github.event.pull_request.user.login, '[bot]')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const author = context.payload.pull_request.user.login;
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            let priorPrs = 0;
+            try {
+              const res = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${owner}/${repo} type:pr author:${author}`,
+                per_page: 5,
+              });
+              priorPrs = res.data.items.filter((i) => i.number !== prNumber).length;
+            } catch (err) {
+              core.warning(`Search API failed, falling back to list: ${err.message}`);
+              const prs = await github.paginate(github.rest.pulls.list, {
+                owner,
+                repo,
+                state: "all",
+                per_page: 100,
+              });
+              priorPrs = prs.filter(
+                (p) => p.user && p.user.login === author && p.number !== prNumber,
+              ).length;
+            }
+
+            if (priorPrs > 0) {
+              core.info(`${author} has ${priorPrs} prior PRs, skipping welcome.`);
+              return;
+            }
+
+            const body = [
+              `Welcome, @${author}, and thanks for your first pull request to ${repo}.`,
+              `A quick look at [CONTRIBUTING.md](https://github.com/${owner}/${repo}/blob/HEAD/CONTRIBUTING.md) covers how things are set up and run here.`,
+              `I'll review this shortly. Ask anything in the thread if something is unclear.`,
+            ].join("\n\n");
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body,
+            });
+
+  claim-issue:
+    name: Handle issue claims
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.action == 'created' &&
+      !github.event.issue.pull_request &&
+      github.event.comment.user.login != 'royalpinto007' &&
+      github.event.comment.user.type != 'Bot' &&
+      !endsWith(github.event.comment.user.login, '[bot]')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const CLAIM_LABEL = "claimed";
+            const MAX_OPEN_CLAIMS = 2;
+            const { owner, repo } = context.repo;
+            const user = context.payload.comment.user.login;
+            const issueNumber = context.payload.issue.number;
+            const bodyText = (context.payload.comment.body || "").toLowerCase();
+
+            const phrases = [
+              "i'd like to work on",
+              "id like to work on",
+              "i would like to work on",
+              "can i work on",
+              "may i work on",
+              "could i work on",
+              "i'll take this",
+              "ill take this",
+              "i will take this",
+              "let me take this",
+              "assign me",
+              "assign this to me",
+              "please assign",
+              "i want to work on",
+              "i wanna work on",
+              "working on this",
+              "i'd like to take this",
+              "can i take this",
+              "i'd like to give this a try",
+              "let me try this",
+            ];
+            const isClaim = phrases.some((p) => bodyText.includes(p));
+            if (!isClaim) {
+              core.info("No claim intent detected.");
+              return;
+            }
+
+            const comment = async (body) =>
+              github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+
+            // Make sure the label exists.
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: CLAIM_LABEL });
+            } catch (err) {
+              if (err.status !== 404) throw err;
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: CLAIM_LABEL,
+                color: "0E8A16",
+                description: "Someone is already working on this issue",
+              });
+            }
+
+            const alreadyClaimed = (context.payload.issue.labels || []).some(
+              (l) => l.name === CLAIM_LABEL,
+            );
+
+            // Count open issues already claimed by this user.
+            const claimedIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: "open",
+              labels: CLAIM_LABEL,
+              per_page: 100,
+            });
+
+            let heldClaims = 0;
+            for (const issue of claimedIssues) {
+              if (issue.pull_request) continue;
+              if (issue.number === issueNumber) continue;
+              if (issue.assignees && issue.assignees.some((a) => a.login === user)) {
+                heldClaims += 1;
+                continue;
+              }
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                { owner, repo, issue_number: issue.number, per_page: 100 },
+              );
+              const claimedByUser = comments.some(
+                (c) =>
+                  c.user &&
+                  c.user.login === user &&
+                  phrases.some((p) => (c.body || "").toLowerCase().includes(p)),
+              );
+              if (claimedByUser) heldClaims += 1;
+            }
+
+            if (alreadyClaimed) {
+              core.info("Issue already carries the claimed label.");
+              return;
+            }
+
+            if (heldClaims >= MAX_OPEN_CLAIMS) {
+              await comment(
+                [
+                  `Thanks for the interest, @${user}. You already have ${heldClaims} open claimed issues here, and we cap it at ${MAX_OPEN_CLAIMS} per person so more people get a turn.`,
+                  `As soon as one of yours is merged or closed, this one is yours for the asking. Just comment again and I'll hand it over.`,
+                ].join("\n\n"),
+              );
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              labels: [CLAIM_LABEL],
+            });
+
+            try {
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                assignees: [user],
+              });
+            } catch (err) {
+              core.info(`Could not assign ${user}: ${err.message}`);
+            }
+
+            await comment(
+              [
+                `It's yours, @${user}. Marked this as \`${CLAIM_LABEL}\`.`,
+                `Take your time, and shout in this thread if you get stuck. If there's no activity for 14 days the claim is released so someone else can pick it up.`,
+              ].join("\n\n"),
+            );
+
+  release-stale-claims:
+    name: Release stale claims
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const CLAIM_LABEL = "claimed";
+            const STALE_DAYS = 14;
+            const { owner, repo } = context.repo;
+            const cutoff = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: "open",
+              labels: CLAIM_LABEL,
+              per_page: 100,
+            });
+
+            for (const issue of issues) {
+              if (issue.pull_request) continue;
+              if (new Date(issue.updated_at).getTime() > cutoff) continue;
+
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number: issue.number,
+                name: CLAIM_LABEL,
+              });
+
+              for (const assignee of issue.assignees || []) {
+                await github.rest.issues.removeAssignees({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  assignees: [assignee.login],
+                });
+              }
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: [
+                  `No movement here for ${STALE_DAYS} days, so I'm releasing the claim and opening this back up.`,
+                  `If you were still working on it, no problem at all. Comment again and it's yours right back. Otherwise, anyone is welcome to pick it up.`,
+                ].join("\n\n"),
+              });
+
+              core.info(`Released claim on #${issue.number}`);
+            }
