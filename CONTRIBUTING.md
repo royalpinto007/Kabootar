@@ -67,4 +67,8 @@ Two small rules keep things fair:
   weeks, the label is removed and it goes back in the pool. No hard feelings, and
   you can always claim it again.
 
+Link your pull request to the issue in the PR description (for example
+`Closes #12`). When that PR is merged the issue closes itself, and if the PR is
+closed without being merged the claim is released so someone else can pick it up.
+
 No pressure on timelines otherwise. Ask questions in the issue thread any time.

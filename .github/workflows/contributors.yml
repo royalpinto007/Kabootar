@@ -335,3 +335,180 @@ jobs:
 
               core.info(`Released claim on #${issue.number}`);
             }
+
+  close-linked-issues:
+    name: Close linked issues on merge
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+      contents: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const CLAIM_LABEL = "claimed";
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const prNumber = pr.number;
+            const author = pr.user && pr.user.login;
+
+            const sources = [pr.body || "", pr.title || ""].join("\n");
+            const numbers = new Set();
+            for (const m of sources.matchAll(/#(\d+)/g)) {
+              numbers.add(Number(m[1]));
+            }
+            const urlPattern = new RegExp(
+              `https?://github\\.com/${owner}/${repo}/issues/(\\d+)`,
+              "gi",
+            );
+            for (const m of sources.matchAll(urlPattern)) {
+              numbers.add(Number(m[1]));
+            }
+            numbers.delete(prNumber);
+
+            for (const number of numbers) {
+              let issue;
+              try {
+                const res = await github.rest.issues.get({
+                  owner,
+                  repo,
+                  issue_number: number,
+                });
+                issue = res.data;
+              } catch (err) {
+                core.info(`Skipping #${number}: ${err.message}`);
+                continue;
+              }
+              if (issue.pull_request) {
+                core.info(`Skipping #${number}: it is a pull request.`);
+                continue;
+              }
+              if (issue.state !== "open") {
+                core.info(`Skipping #${number}: not open.`);
+                continue;
+              }
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: number,
+                body: `Closed by #${prNumber} from @${author}. Thanks!`,
+              });
+
+              if ((issue.labels || []).some((l) => (l.name || l) === CLAIM_LABEL)) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: number,
+                    name: CLAIM_LABEL,
+                  });
+                } catch (err) {
+                  core.info(`Could not remove label on #${number}: ${err.message}`);
+                }
+              }
+
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: number,
+                state: "closed",
+                state_reason: "completed",
+              });
+
+              core.info(`Closed #${number} via PR #${prNumber}.`);
+            }
+
+  release-claim-on-unmerged-pr:
+    name: Release claim when PR closes unmerged
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+      contents: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const CLAIM_LABEL = "claimed";
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const prNumber = pr.number;
+
+            const sources = [pr.body || "", pr.title || ""].join("\n");
+            const numbers = new Set();
+            for (const m of sources.matchAll(/#(\d+)/g)) {
+              numbers.add(Number(m[1]));
+            }
+            const urlPattern = new RegExp(
+              `https?://github\\.com/${owner}/${repo}/issues/(\\d+)`,
+              "gi",
+            );
+            for (const m of sources.matchAll(urlPattern)) {
+              numbers.add(Number(m[1]));
+            }
+            numbers.delete(prNumber);
+
+            for (const number of numbers) {
+              let issue;
+              try {
+                const res = await github.rest.issues.get({
+                  owner,
+                  repo,
+                  issue_number: number,
+                });
+                issue = res.data;
+              } catch (err) {
+                core.info(`Skipping #${number}: ${err.message}`);
+                continue;
+              }
+              if (issue.pull_request) continue;
+              if (issue.state !== "open") continue;
+
+              if ((issue.labels || []).some((l) => (l.name || l) === CLAIM_LABEL)) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: number,
+                    name: CLAIM_LABEL,
+                  });
+                } catch (err) {
+                  core.info(`Could not remove label on #${number}: ${err.message}`);
+                }
+              }
+
+              for (const assignee of issue.assignees || []) {
+                try {
+                  await github.rest.issues.removeAssignees({
+                    owner,
+                    repo,
+                    issue_number: number,
+                    assignees: [assignee.login],
+                  });
+                } catch (err) {
+                  core.info(`Could not unassign on #${number}: ${err.message}`);
+                }
+              }
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: number,
+                body: [
+                  `The linked pull request #${prNumber} was closed without being merged, so this issue is open again.`,
+                  `The work is still needed. Anyone is welcome to pick it up, just comment here and it's yours.`,
+                ].join("\n\n"),
+              });
+
+              core.info(`Released claim on #${number} after PR #${prNumber}.`);
+            }
