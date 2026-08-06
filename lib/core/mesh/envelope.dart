@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// The three kinds of unit that travel over the mesh.
+/// The eight kinds of unit that travel over the mesh.
 ///
 /// * [hello] - a link-local handshake. Not flooded, not relayed. When two
 ///   devices form a transport link they trade a [hello] so each learns the
@@ -93,7 +93,12 @@ class Envelope {
   final String toId;
 
   /// Chat text for [EnvelopeKind.msg]; the acknowledged message id for
-  /// [EnvelopeKind.ack]; empty for [EnvelopeKind.hello].
+  /// [EnvelopeKind.ack]; the read message id for [EnvelopeKind.read]; the
+  /// deleted message id for [EnvelopeKind.retract]; a sealed group invitation
+  /// payload for [EnvelopeKind.invite]; a media manifest for
+  /// [EnvelopeKind.media]; a transport slice for [EnvelopeKind.chunk]; and the
+  /// hello handshake payload (which carries the sender's public-key bundle)
+  /// for [EnvelopeKind.hello].
   final String body;
 
   /// Originator's send time, epoch milliseconds. Used for age-based pruning.
