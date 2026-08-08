@@ -43,3 +43,20 @@ downloaded APK.
   carrying your message until they come back.
 
 Made in India. Works offline.
+
+## Re-cut 2026-08-08
+
+This tag was moved to pick up the rename work. Every user-visible "Studchat" is
+now "Kabootar", including the iOS app name and the two Bluetooth permission
+prompts, which is the sentence somebody reads before deciding whether to let an
+app use their radio.
+
+The Android app itself is unchanged from the original v1.0.0 build: nothing
+under `lib/` or `android/` differs, so these APKs behave identically. The repo
+also gained screenshots in the README and issue templates.
+
+Deliberately unchanged, because they are identifiers rather than names: the
+`dev.studchat.studchat` application id, the `studchat.*` preference keys that
+hold your identity and keypair, the key-derivation label, and the
+`_studchat._tcp` Bonjour service names peers discover each other by. Renaming
+the last two would stop a new build talking to one already in the field.
