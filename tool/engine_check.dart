@@ -572,7 +572,7 @@ Future<void> scenarioRetract() async {
 }
 
 Future<void> main() async {
-  print('studchat mesh engine - behavioural verification');
+  print('Kabootar mesh engine - behavioural verification');
   await scenarioDirectDelivery();
   await scenarioDedup();
   await scenarioMultiHopRelay();

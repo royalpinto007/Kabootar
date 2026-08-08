@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Studchat</string>
+	<string>Kabootar</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Studchat</string>
+	<string>Kabootar</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -39,15 +39,15 @@
 	     blocks peer discovery on the local network.
 	     ================================================================ -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>studchat discovers nearby phones over your local network to relay messages when there is no internet.</string>
+	<string>Kabootar discovers nearby phones over your local network to relay messages when there is no internet.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_studchat._tcp</string>
 		<string>_studchat._udp</string>
 	</array>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>studchat uses Bluetooth to find and connect to nearby phones so your messages can hop peer to peer without a network.</string>
+	<string>Kabootar uses Bluetooth to find and connect to nearby phones so your messages can hop peer to peer without a network.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>studchat uses Bluetooth to find and connect to nearby phones so your messages can hop peer to peer without a network.</string>
+	<string>Kabootar uses Bluetooth to find and connect to nearby phones so your messages can hop peer to peer without a network.</string>
 </dict>
 </plist>
