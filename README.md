@@ -41,6 +41,33 @@ encryption**, private groups, and image and file sharing.
 > halls, festivals, protests, stadiums, trains, remote areas, roaming with no
 > plan. Proximity is available even when the internet is not.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td width="25%" valign="top">
+      <img src="docs/media/1-chats.webp" width="100%" alt="Chats, with delivery receipts that travelled back through the mesh.">
+      <sub><b>Chats.</b> Receipts travel back the same way the message went.</sub>
+    </td>
+    <td width="25%" valign="top">
+      <img src="docs/media/2-mesh.webp" width="100%" alt="The mesh: peers in range, messages carried for others, and live routing events.">
+      <sub><b>Mesh.</b> Peers in range, what you are carrying for other people, and routing as it happens.</sub>
+    </td>
+    <td width="25%" valign="top">
+      <img src="docs/media/3-people.webp" width="100%" alt="Scanning for nearby phones over Bluetooth and Wi-Fi.">
+      <sub><b>People.</b> Whoever is running Kabootar within range.</sub>
+    </td>
+    <td width="25%" valign="top">
+      <img src="docs/media/4-channels.webp" width="100%" alt="Channels and private groups, joined with a code.">
+      <sub><b>Channels.</b> Private groups, joined with a code you share in person.</sub>
+    </td>
+  </tr>
+</table>
+
+<sub>Captured from the app running on a physical device, with the status and
+navigation bars cropped out. Peer counts read zero because only one device was
+in range for the capture.</sub>
+
 ## What it is
 
 Kabootar is a private **messenger with no backend at all**. Instead of routing
