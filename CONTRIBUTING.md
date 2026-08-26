@@ -25,9 +25,13 @@ With Flutter installed:
 
 ```bash
 flutter pub get
+dart format --output=none --set-exit-if-changed .
 flutter analyze
 flutter test
 ```
+
+`dart format` is the formatting authority. CI fails if a Dart file would be
+changed, so run the same check locally before pushing.
 
 ## Running the app
 
