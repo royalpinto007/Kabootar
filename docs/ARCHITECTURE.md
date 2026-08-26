@@ -131,7 +131,8 @@ status it cannot prove:
 |--------|-------|----------|
 | `sending` | queued into the mesh, no peer yet | clock |
 | `sent` | handed to at least one peer | single tick |
-| `delivered` | end-to-end `ack` came back | blue double tick |
+| `delivered` | end-to-end `ack` came back | grey double tick |
+| `read` | the recipient's `read` envelope came back, proving they opened and saw it | blue double tick |
 | `failed` | aged out of the carry-cache undelivered | error glyph |
 
 ## Bounds and why they exist
