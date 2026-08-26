@@ -211,7 +211,8 @@ class _DutiesCard extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
-                        height: 1.0, // tight leading so the digit centres in the circle
+                        // Tight leading so the digit centres in the circle.
+                        height: 1.0,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
