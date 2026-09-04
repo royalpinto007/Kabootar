@@ -37,5 +37,7 @@ jobs:
       - run: flutter pub get
       - name: Static analysis
         run: flutter analyze
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed .
       - name: Unit tests
         run: flutter test
