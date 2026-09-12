@@ -16,7 +16,7 @@
 # Idempotent: safe to run repeatedly.
 set -euo pipefail
 
-echo "==> Pinning the app's Android Gradle Plugin / Gradle to an 8.x that the"
+echo "==> Pinning the app's Android Gradle Plugin / Gradle to versions that the"
 echo "    2021-era plugin supports (the generated default is too new)."
 
 SETTINGS="android/settings.gradle.kts"
@@ -25,7 +25,7 @@ if [[ -f "$SETTINGS" ]]; then
   sed -i -E 's/id\("com\.android\.application"\) version "[0-9.]+"/id("com.android.application") version "8.9.1"/' "$SETTINGS"
 fi
 if [[ -f "$WRAPPER" ]]; then
-  sed -i -E 's#gradle-[0-9.]+-all\.zip#gradle-8.11.1-all.zip#' "$WRAPPER"
+  sed -i -E 's#gradle-[0-9.]+-all\.zip#gradle-8.14.3-all.zip#' "$WRAPPER"
 fi
 
 echo "==> Locating flutter_nearby_connections in the pub cache."
