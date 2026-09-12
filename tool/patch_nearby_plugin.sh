@@ -22,7 +22,7 @@ echo "    2021-era plugin supports (the generated default is too new)."
 SETTINGS="android/settings.gradle.kts"
 WRAPPER="android/gradle/wrapper/gradle-wrapper.properties"
 if [[ -f "$SETTINGS" ]]; then
-  sed -i -E 's/id\("com\.android\.application"\) version "[0-9.]+"/id("com.android.application") version "8.9.1"/' "$SETTINGS"
+  sed -i -E 's/id\("com\.android\.application"\) version "[0-9.]+"/id("com.android.application") version "8.11.1"/' "$SETTINGS"
 fi
 if [[ -f "$WRAPPER" ]]; then
   sed -i -E 's#gradle-[0-9.]+-all\.zip#gradle-8.14.3-all.zip#' "$WRAPPER"
